@@ -13,7 +13,7 @@ from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from werkzeug.exceptions import NotFound, MethodNotAllowed
 
-def create_app(config=config_dict['test']):
+def create_app(config=config_dict['prod']):
     app = Flask(__name__)
     app.config.from_object(config)
     #CORS(app)
