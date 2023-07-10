@@ -9,14 +9,14 @@ from .models.account import Account
 from .models.loan import Loan
 from .models.transaction import CreditTransaction
 from flask_migrate import Migrate
-#from flask_cors import CORS
+from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from werkzeug.exceptions import NotFound, MethodNotAllowed
 
 def create_app(config=config_dict['prod']):
     app = Flask(__name__)
     app.config.from_object(config)
-    #CORS(app)
+    CORS(app)
     db.init_app(app)
     jwt = JWTManager(app)
     migrate = Migrate(app, db)
