@@ -72,6 +72,17 @@ repay_loan_model = account_namespace.model('RepayLoan', {
     'loan_id': fields.Integer(required=True, description='The ID of the loan to repay'),
 })
 
+transaction_model = account_namespace.model('Transaction', {
+    'transaction_id': fields.Integer(readonly=True, description='The transaction ID'),
+    'sender_firstname': fields.String(description='The first name of the sender'),
+    'sender_lastname': fields.String(description='The last name of the sender'),
+    'receiver_firstname': fields.String(description='The first name of the receiver'),
+    'receiver_lastname': fields.String(description='The last name of the receiver'),
+    'amount': fields.Float(description='The amount of the transaction'),
+    'date': fields.DateTime(readonly=True, description='The date of the transaction'),
+    'transaction_type': fields.String(description='The type of the transaction (credit, debit, loan_application, loan_repayment)'),
+})
+
 @account_namespace.route('/create_account')
 class CreateAccount(Resource):
     @account_namespace.expect(account_creation_model, validate=True)
@@ -89,7 +100,7 @@ class CreateAccount(Resource):
         account_type = data['account_type']
 
         if account_type not in ('savings', 'current'):
-            return {'message': 'Account type can only be savings or current'}, 400
+            return {'message': 'Please select either savings or current account'}, 400
 
         user_id = get_jwt_identity()
 
@@ -116,6 +127,8 @@ class CreateAccount(Resource):
         }
 
         return account_data, 201
+        # return json.dumps(account_data), 201, {'Content-Type': 'application/json'}
+        # return jsonify(account_data), 201, {'Content-Type': 'application/json'}
 
 @account_namespace.route('/get_accounts')
 class GetAccounts(Resource):    
@@ -169,14 +182,13 @@ class ApplyLoan(Resource):
         if not amount or amount <= 0:
             return {'message': 'Amount must be more than 0 Naira'}, 400
 
-        # Perform additional validation if needed for future loan applications
-
         account = Account.query.filter_by(user_id=user_id, account_number=account_number).first()
         if not account:
-            return {'message': 'Provided account does not belong to the user'}, 400
+            return {'message': 'Please select Account'}, 400
         
         if not account.is_active:
             return {'message': 'Account is deactivated. Cannot perform transaction'}, 400
+        
 
         loan = Loan(user_id=user_id, account_id=account.id, account_number=account_number, amount=amount, purpose=purpose, is_approved=True)
 
@@ -208,6 +220,7 @@ class GetLoans(Resource):
         loan_data = [{
             'id': loan.id,
             'account_number': loan.account.account_number,
+            'account_type': loan.account.account_type,
             'amount': loan.amount,
             'purpose': loan.purpose,
             'is_approved': loan.is_approved,
@@ -241,7 +254,7 @@ class GetAccountBalance(Resource):
 
         account = Account.query.filter_by(user_id=user_id, account_number=account_number).first()
         if not account:
-            return {'message': 'Provided account does not belong to the user'}, 400
+            return {'message': 'Please select an account'}, 400
         
         if not account.is_active:
             return {'message': 'Account is deactivated. Cannot perform transaction'}, 400
@@ -288,6 +301,10 @@ class CreditAccount(Resource):
         receiver_account = Account.query.filter_by(account_number=receiver_account_number).first()
         if not receiver_account:
             return {'message': 'Provided receiver account number does not exist'}, 400
+        
+        # make sure sender cannot send money to the same account used to send money
+        if sender_account_number == receiver_account_number:
+            return {'message': 'Sender and receiver account numbers cannot be the same'}, 400
 
         if not receiver_account.is_active:
             return {'message': 'Receiver account is deactivated. Cannot perform credit transaction'}, 400
@@ -435,3 +452,134 @@ class DeactivateAccount(Resource):
         db.session.commit()
 
         return {'message': 'Account deactivated successfully'}, 200
+    
+@account_namespace.route('/user')
+class UserResource(Resource):
+    @account_namespace.doc(description='Get user details')
+    @jwt_required()
+    def get(self):
+        """
+        Get user details
+        """
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+
+        if not user:
+            return {'message': 'User not found'}, 404
+
+        user_data = {
+            'firstname': user.firstname,
+            'lastname': user.lastname,
+            'email': user.email,
+            # Add more user details as needed
+        }
+
+        return user_data, 200
+    
+
+@account_namespace.route('/get_all_accounts')
+class GetAllAccounts(Resource):
+    # @account_namespace.marshal_list_with(account_model)
+    @account_namespace.doc(description='Get all account numbers and their details')
+    @jwt_required()
+    def get(self):
+        """
+        Get all account numbers and their details
+        """
+        accounts = Account.query.all()
+
+        accounts = [{
+            'id': account.id,
+            'firstname': account.user.firstname,
+            'lastname': account.user.lastname,
+            'account_number': account.account_number,
+            'account_type': account.account_type,
+            # 'balance': account.balance,
+            # 'user_id': account.user_id,
+            # 'is_active': account.is_active,
+            # 'date_created': account.date_created.isoformat(),
+        } for account in accounts]
+
+        return accounts, 200
+
+def get_user_firstname(account_number):
+    user = User.query.join(Account, User.id == Account.user_id).filter(Account.account_number == account_number).first()
+    return user.firstname if user else None
+
+def get_user_lastname(account_number):
+    user = User.query.join(Account, User.id == Account.user_id).filter(Account.account_number == account_number).first()
+    return user.lastname if user else None
+
+@account_namespace.route('/get_all_transactions')
+class GetAllTransactions(Resource):
+    @account_namespace.expect(account_balance_model, validate=True)
+    @account_namespace.doc(description='Get all transactions for a specific account number')
+    @jwt_required()
+    def get(self):
+        """
+        Get all transactions for a specific account number
+        """
+        data = request.get_json()
+        account_number = data.get('account_number')
+        if not account_number:
+            return {'message': 'Account number is a required field'}, 400
+
+        user_id = get_jwt_identity()
+        account = Account.query.filter_by(user_id=user_id, account_number=account_number).first()
+        if not account:
+            return {'message': 'Account number does not belong to the logged-in user'}, 400
+
+        credit_transactions = CreditTransaction.query.filter_by(receiver_account_number=account_number)
+        debit_transactions = CreditTransaction.query.filter_by(sender_account_number=account_number)
+
+        loan_applications = Loan.query.filter_by(account_number=account_number, is_approved=True)
+        loan_repayments = Loan.query.filter_by(account_number=account_number, is_repaid=True)
+
+        credit_data = [{
+            'transaction_id': transaction.id,
+            'sender_firstname': get_user_firstname(transaction.sender_account_number),
+            'sender_lastname': get_user_lastname(transaction.sender_account_number),
+            'receiver_firstname': get_user_firstname(transaction.receiver_account_number),
+            'receiver_lastname': get_user_lastname(transaction.receiver_account_number),
+            'amount': transaction.amount,
+            'date': transaction.date.isoformat(),
+            'transaction_type': 'credit'
+        } for transaction in credit_transactions]
+
+        debit_data = [{
+            'transaction_id': transaction.id,
+            'sender_firstname': get_user_firstname(transaction.sender_account_number),
+            'sender_lastname': get_user_lastname(transaction.sender_account_number),
+            'receiver_firstname': get_user_firstname(transaction.receiver_account_number),
+            'receiver_lastname': get_user_lastname(transaction.receiver_account_number),
+            'amount': transaction.amount,
+            'date': transaction.date.isoformat(),
+            'transaction_type': 'debit'
+        } for transaction in debit_transactions]
+
+        loan_application_data = [{
+            'transaction_id': loan.id,
+            'sender_firstname': None,
+            'sender_lastname': None,
+            'receiver_firstname': get_user_firstname(account_number),
+            'receiver_lastname': get_user_lastname(account_number),
+            'amount': loan.amount,
+            'date': loan.date_created.isoformat(),
+            'transaction_type': 'loan_application'
+        } for loan in loan_applications]
+
+        loan_repayment_data = [{
+            'transaction_id': loan.id,
+            'sender_firstname': get_user_firstname(account_number),
+            'sender_lastname': get_user_lastname(account_number),
+            'receiver_firstname': None,
+            'receiver_lastname': None,
+            'amount': loan.repayment_amount,
+            'date': loan.repayment_date.isoformat(),
+            'transaction_type': 'loan_repayment'
+        } for loan in loan_repayments]
+
+        all_transactions = sorted(credit_data + debit_data + loan_application_data + loan_repayment_data,
+                                  key=lambda x: x['date'], reverse=True)
+
+        return all_transactions, 200

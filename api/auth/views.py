@@ -50,12 +50,13 @@ class SignUp(Resource):
           Signup a User  
         """
         data = request.get_json()
+        # data = auth_namespace.payload
         
-        firstname = data['firstname']
-        lastname = data['lastname']
-        email = data['email']
-        phone_number = data['phone_number']
-        password_hash = generate_password_hash(data["password"])
+        firstname = data.get('firstname')
+        lastname = data.get('lastname')
+        email = data.get('email')
+        phone_number = data.get('phone_number')
+        password_hash = generate_password_hash(data.get("password"))
         
         email_exists = User.query.filter_by(email=email).first()
         if email_exists:
@@ -71,7 +72,17 @@ class SignUp(Resource):
 
         new_user.save()
 
-        return {'message': f'Hi {firstname}, your signup was successful, please log in!'}, 201
+        response_data = {
+            'id': new_user.id,
+            'firstname': new_user.firstname,
+            'lastname': new_user.lastname,
+            'email': new_user.email,
+            'phone_number': new_user.phone_number,
+            'password_hash': new_user.password_hash
+        }
+
+        # return json.dumps(response_data), 201, {'Content-Type': 'application/json'} #HTTPStatus.CREATED # return new_user, 201
+        return {'message': 'Account created successfully'}, 201
 
 @auth_namespace.route('/login')
 class Login(Resource):
@@ -95,12 +106,22 @@ class Login(Resource):
             access_token = create_access_token(identity=user.id)
             refresh_token = create_refresh_token(identity=user.id)
 
+            # response = {
+            #     'access_token': access_token,
+            #     'refresh_token': refresh_token
+            # }
+
+            # return response, HTTPStatus.OK
+
             response = {
+                'message': 'Login successful',
                 'access_token': access_token,
                 'refresh_token': refresh_token
             }
 
             return response, HTTPStatus.OK
+
+        return {'message': 'Invalid credentials'}, HTTPStatus.UNAUTHORIZED
 
 @auth_namespace.route('/refresh')
 class Refresh(Resource):
