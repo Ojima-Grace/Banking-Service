@@ -28,12 +28,12 @@ const App = () => {
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/transfer" element={<TransferPage />} />
-          <Route path="/transactions" element={<TransactionsPage />} />
+          {/* <Route path="/transactions" element={<TransactionsPage />} /> */}
           <Route path="/apply-for-loan" element={<ApplyForLoanPage />} />
           <Route path="/repay-loan" element={<RepayLoanPage />} />
           <Route path="/loans" element={<LoansPage />} />
           <Route path="/accounts" element={<AccountsPage />} />
-          <Route path="/account-balance" element={<AccountBalancePage />} />
+          {/* <Route path="/account-balance" element={<AccountBalancePage />} /> */}
           <Route path="/open-bank-account" element={<OpenAccountPage />} />" 
           <Route path="/activate" element={<ActivateAccountPage />} />"  
           <Route path="/deactivate" element={<DeactivateAccountPage />} />"      
