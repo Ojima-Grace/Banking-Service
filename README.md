@@ -38,8 +38,6 @@ The Banking API is a simple RESTful API built using Flask-RESTful that allows us
 
 ***POST /account/credit_account:*** Deposit funds into an account.
 
-***GET /account/get_all_transactions:*** Get all transactions of a specific account.
-
 ***PUT /account/deactivate_account:*** Deactivate an account.
 
 ***PUT /account/activate_account:*** Activate an account.
