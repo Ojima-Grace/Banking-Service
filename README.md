@@ -16,6 +16,8 @@ The Banking API is a simple RESTful API built using Flask-RESTful that allows us
 
 ## API Endpoints
 
+### auth
+
 ***POST /auth/signup:*** Signup a new user.
 
 ***POST /auth/login:*** User login to obtain an authentication token.
@@ -23,6 +25,8 @@ The Banking API is a simple RESTful API built using Flask-RESTful that allows us
 ***POST /auth/refresh:*** User generates refresh authenntication token.
 
 ***POST /auth/logout:*** Logout a user.
+
+### account
 
 ***POST /account/create_account:*** Create a new account (either "savings", "current" or both).
 
@@ -46,7 +50,7 @@ The Banking API is a simple RESTful API built using Flask-RESTful that allows us
 
 ## Authentication
 
-The API uses JWT-based authentication to access protected endpoints, enter JWT token in the Authorization header as `Bearer <token>`.
+The API uses JWT-based authentication. To access protected endpoints, include the JWT token in the Authorization header as `Bearer <token>`.
 
 ## Error Handling
 
