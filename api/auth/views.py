@@ -121,7 +121,7 @@ class Login(Resource):
 
             return response, HTTPStatus.OK
 
-        return {'message': 'Invalid credentials'}, HTTPStatus.UNAUTHORIZED
+        return {'message': 'Password or Email is Incorrect!'}, HTTPStatus.UNAUTHORIZED
 
 @auth_namespace.route('/refresh')
 class Refresh(Resource):
