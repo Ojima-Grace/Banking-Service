@@ -4,9 +4,9 @@ The Banking API is a simple RESTful API built using Flask-RESTful that allows us
 
 ## Features
 
-***Account Management:*** Create, retrieve, update, and delete user accounts.
+***Account Management:*** Create, retrieve, update, deactivate and activate user accounts.
 
-***Transaction Handling:*** Perform deposit, withdrawal, and balance inquiry transactions.
+***Transaction Handling:*** Apply for loan, perform deposit, and balance inquiry transactions.
 
 ***User Authentication:*** Secure endpoints using JWT-based authentication.
 
