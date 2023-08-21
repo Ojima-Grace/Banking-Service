@@ -233,39 +233,39 @@ class GetLoans(Resource):
         return loan_data, 200
 
     
-@account_namespace.route('/get_account_balance')
-class GetAccountBalance(Resource):
-    @account_namespace.expect(account_balance_model, validate=True)
-    @account_namespace.doc(
-        description='Get the balance of an account'
-    )
-    @jwt_required()
-    def get(self):
-        """
-        Get the balance of an account
-        """
-        data = request.get_json()
-        user_id = get_jwt_identity()
+# @account_namespace.route('/get_account_balance')
+# class GetAccountBalance(Resource):
+#     @account_namespace.expect(account_balance_model, validate=True)
+#     @account_namespace.doc(
+#         description='Get the balance of an account'
+#     )
+#     @jwt_required()
+#     def get(self):
+#         """
+#         Get the balance of an account
+#         """
+#         data = request.get_json()
+#         user_id = get_jwt_identity()
 
-        account_number = data.get('account_number')
+#         account_number = data.get('account_number')
 
-        if not account_number:
-            return {'message': 'Account number is a required field'}, 400
+#         if not account_number:
+#             return {'message': 'Account number is a required field'}, 400
 
-        account = Account.query.filter_by(user_id=user_id, account_number=account_number).first()
-        if not account:
-            return {'message': 'Please select an account'}, 400
+#         account = Account.query.filter_by(user_id=user_id, account_number=account_number).first()
+#         if not account:
+#             return {'message': 'Please select an account'}, 400
         
-        if not account.is_active:
-            return {'message': 'Account is deactivated. Cannot perform transaction'}, 400
+#         if not account.is_active:
+#             return {'message': 'Account is deactivated. Cannot perform transaction'}, 400
 
-        account_info = {
-            'account_number': account.account_number,
-            'account_type': account.account_type,
-            'balance': account.balance
-        }
+#         account_info = {
+#             'account_number': account.account_number,
+#             'account_type': account.account_type,
+#             'balance': account.balance
+#         }
 
-        return account_info, 200
+#         return account_info, 200
 
 @account_namespace.route('/credit_account')
 class CreditAccount(Resource):
