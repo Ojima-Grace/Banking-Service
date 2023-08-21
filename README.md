@@ -26,8 +26,6 @@ The Banking API is a simple RESTful API built using Flask-RESTful that allows us
 
 ***POST /account/create_account:*** Create a new account (either "savings", "current" or both).
 
-***GET /account/get_account_balance:*** Get balance of an account.
-
 ***GET /account/user:*** Get user details.
 
 ***GET /account/get_account:*** Get user account number and details.
