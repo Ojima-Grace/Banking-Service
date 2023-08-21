@@ -510,76 +510,76 @@ def get_user_lastname(account_number):
     user = User.query.join(Account, User.id == Account.user_id).filter(Account.account_number == account_number).first()
     return user.lastname if user else None
 
-@account_namespace.route('/get_all_transactions')
-class GetAllTransactions(Resource):
-    @account_namespace.expect(account_balance_model, validate=True)
-    @account_namespace.doc(description='Get all transactions for a specific account number')
-    @jwt_required()
-    def get(self):
-        """
-        Get all transactions for a specific account number
-        """
-        data = request.get_json()
-        account_number = data.get('account_number')
-        if not account_number:
-            return {'message': 'Account number is a required field'}, 400
+# @account_namespace.route('/get_all_transactions')
+# class GetAllTransactions(Resource):
+#     @account_namespace.expect(account_balance_model, validate=True)
+#     @account_namespace.doc(description='Get all transactions for a specific account number')
+#     @jwt_required()
+#     def get(self):
+#         """
+#         Get all transactions for a specific account number
+#         """
+#         data = request.get_json()
+#         account_number = data.get('account_number')
+#         if not account_number:
+#             return {'message': 'Account number is a required field'}, 400
 
-        user_id = get_jwt_identity()
-        account = Account.query.filter_by(user_id=user_id, account_number=account_number).first()
-        if not account:
-            return {'message': 'Account number does not belong to the logged-in user'}, 400
+#         user_id = get_jwt_identity()
+#         account = Account.query.filter_by(user_id=user_id, account_number=account_number).first()
+#         if not account:
+#             return {'message': 'Account number does not belong to the logged-in user'}, 400
 
-        credit_transactions = CreditTransaction.query.filter_by(receiver_account_number=account_number)
-        debit_transactions = CreditTransaction.query.filter_by(sender_account_number=account_number)
+#         credit_transactions = CreditTransaction.query.filter_by(receiver_account_number=account_number)
+#         debit_transactions = CreditTransaction.query.filter_by(sender_account_number=account_number)
 
-        loan_applications = Loan.query.filter_by(account_number=account_number, is_approved=True)
-        loan_repayments = Loan.query.filter_by(account_number=account_number, is_repaid=True)
+#         loan_applications = Loan.query.filter_by(account_number=account_number, is_approved=True)
+#         loan_repayments = Loan.query.filter_by(account_number=account_number, is_repaid=True)
 
-        credit_data = [{
-            'transaction_id': transaction.id,
-            'sender_firstname': get_user_firstname(transaction.sender_account_number),
-            'sender_lastname': get_user_lastname(transaction.sender_account_number),
-            'receiver_firstname': get_user_firstname(transaction.receiver_account_number),
-            'receiver_lastname': get_user_lastname(transaction.receiver_account_number),
-            'amount': transaction.amount,
-            'date': transaction.date.isoformat(),
-            'transaction_type': 'credit'
-        } for transaction in credit_transactions]
+#         credit_data = [{
+#             'transaction_id': transaction.id,
+#             'sender_firstname': get_user_firstname(transaction.sender_account_number),
+#             'sender_lastname': get_user_lastname(transaction.sender_account_number),
+#             'receiver_firstname': get_user_firstname(transaction.receiver_account_number),
+#             'receiver_lastname': get_user_lastname(transaction.receiver_account_number),
+#             'amount': transaction.amount,
+#             'date': transaction.date.isoformat(),
+#             'transaction_type': 'credit'
+#         } for transaction in credit_transactions]
 
-        debit_data = [{
-            'transaction_id': transaction.id,
-            'sender_firstname': get_user_firstname(transaction.sender_account_number),
-            'sender_lastname': get_user_lastname(transaction.sender_account_number),
-            'receiver_firstname': get_user_firstname(transaction.receiver_account_number),
-            'receiver_lastname': get_user_lastname(transaction.receiver_account_number),
-            'amount': transaction.amount,
-            'date': transaction.date.isoformat(),
-            'transaction_type': 'debit'
-        } for transaction in debit_transactions]
+#         debit_data = [{
+#             'transaction_id': transaction.id,
+#             'sender_firstname': get_user_firstname(transaction.sender_account_number),
+#             'sender_lastname': get_user_lastname(transaction.sender_account_number),
+#             'receiver_firstname': get_user_firstname(transaction.receiver_account_number),
+#             'receiver_lastname': get_user_lastname(transaction.receiver_account_number),
+#             'amount': transaction.amount,
+#             'date': transaction.date.isoformat(),
+#             'transaction_type': 'debit'
+#         } for transaction in debit_transactions]
 
-        loan_application_data = [{
-            'transaction_id': loan.id,
-            'sender_firstname': None,
-            'sender_lastname': None,
-            'receiver_firstname': get_user_firstname(account_number),
-            'receiver_lastname': get_user_lastname(account_number),
-            'amount': loan.amount,
-            'date': loan.date_created.isoformat(),
-            'transaction_type': 'loan_application'
-        } for loan in loan_applications]
+#         loan_application_data = [{
+#             'transaction_id': loan.id,
+#             'sender_firstname': None,
+#             'sender_lastname': None,
+#             'receiver_firstname': get_user_firstname(account_number),
+#             'receiver_lastname': get_user_lastname(account_number),
+#             'amount': loan.amount,
+#             'date': loan.date_created.isoformat(),
+#             'transaction_type': 'loan_application'
+#         } for loan in loan_applications]
 
-        loan_repayment_data = [{
-            'transaction_id': loan.id,
-            'sender_firstname': get_user_firstname(account_number),
-            'sender_lastname': get_user_lastname(account_number),
-            'receiver_firstname': None,
-            'receiver_lastname': None,
-            'amount': loan.repayment_amount,
-            'date': loan.repayment_date.isoformat(),
-            'transaction_type': 'loan_repayment'
-        } for loan in loan_repayments]
+#         loan_repayment_data = [{
+#             'transaction_id': loan.id,
+#             'sender_firstname': get_user_firstname(account_number),
+#             'sender_lastname': get_user_lastname(account_number),
+#             'receiver_firstname': None,
+#             'receiver_lastname': None,
+#             'amount': loan.repayment_amount,
+#             'date': loan.repayment_date.isoformat(),
+#             'transaction_type': 'loan_repayment'
+#         } for loan in loan_repayments]
 
-        all_transactions = sorted(credit_data + debit_data + loan_application_data + loan_repayment_data,
-                                  key=lambda x: x['date'], reverse=True)
+#         all_transactions = sorted(credit_data + debit_data + loan_application_data + loan_repayment_data,
+#                                   key=lambda x: x['date'], reverse=True)
 
-        return all_transactions, 200
+#         return all_transactions, 200
